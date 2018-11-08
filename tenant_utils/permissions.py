@@ -112,7 +112,7 @@ class TenantPermissionsDelegator(object):
     def is_superuser(self, value):
         try:
             self.tenant_permissions.is_superuser = value
-            self.tenant_permissions.is_superuser.save()
+            self.tenant_permissions.save()
         except self.PermissionsModel.DoesNotExist:
             if self.id:
                 permissions = self.PermissionsModel(
