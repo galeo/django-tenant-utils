@@ -62,7 +62,15 @@ class TenantBase(TenantMixin):
             is_superuser=is_superuser
         )
         # Link user to tenant
-        user_obj.tenant_set.add(self)
+        try:
+            user_obj.tenant_set.add(self)
+        except AttributeError:
+            self.__class__.users.through._default_manager.create(
+                **dict(zip(
+                    self.__class__.users.field.remote_field.through_fields,
+                    (self, user_obj)
+                ))
+            )
 
         tenant_user_added.send(sender=self.__class__, user=user_obj, tenant=self)
 
@@ -87,7 +95,15 @@ class TenantBase(TenantMixin):
 
         # Unlink from tenant
         get_permissions_model().objects.filter(id=user_tenant_perms.id).delete()
-        user_obj.tenant_set.remove(self)
+        try:
+            user_obj.tenant_set.remove(self)
+        except AttributeError:
+            self.__class__.users.through._default_manager.filter(
+                **dict(zip(
+                    self.__class__.users.field.remote_field.through_fields,
+                    (self, user_obj)
+                ))
+            ).delete()
 
         tenant_user_removed.send(sender=self.__class__, user=user_obj, tenant=self)
 
