@@ -79,7 +79,7 @@ class TenantBase(TenantMixin):
         if user_obj.id == self.owner.id:
             raise DeleteError("Cannot remove owner from tenant: %s" % self.owner)
 
-        user_tenant_perms = user_obj.usertenantpermissions
+        user_tenant_perms = user_obj.tenant_permissions
 
         # Remove all current groups from user..
         groups = user_tenant_perms.groups
@@ -137,22 +137,22 @@ class TenantBase(TenantMixin):
         old_owner = self.owner
 
         # Remove current owner superuser status but retain any assigned role(s)
-        old_owner_tenant = old_owner.usertenantpermissions
-        old_owner_tenant.is_superuser = False
-        old_owner_tenant.save()
+        old_owner_tenant_perms = old_owner.tenant_permissions
+        old_owner_tenant_perms.is_superuser = False
+        old_owner_tenant_perms.save()
 
         self.owner = new_owner
 
         # If original has no permissions left, remove user from tenant
-        if not old_owner_tenant.groups.exists():
+        if not old_owner_tenant_perms.groups.exists():
             self.remove_user(old_owner)
 
         try:
             # Set new user as superuser in this tenant if user already exists
             user = self.users.get(id=new_owner.id)
-            user_tenant = user.usertenantpermissions
-            user_tenant.is_superuser = True
-            user_tenant.save()
+            user_tenant_perms = user.tenant_permissions
+            user_tenant_perms.is_superuser = True
+            user_tenant_perms.save()
         except get_user_model().DoesNotExist:
             # New user is not a part of the system, add them as a user..
             self.add_user(new_owner, is_superuser=True)
