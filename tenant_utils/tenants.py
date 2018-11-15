@@ -145,7 +145,7 @@ class TenantBase(TenantMixin):
         self.transfer_ownership(public_tenant.owner)
 
         # Remove old owner as a user if the owner still exists after the transfer
-        if self.users.filter(id=user_obj.id).exists():
+        if self.users.filter(id=old_owner.id).exists():
             self.remove_user(old_owner)
 
     @schema_required
