@@ -82,6 +82,7 @@ def get_current_tenant():
     return tenant
 
 
+@transaction.atomic
 def create_public_tenant(domain_url, owner_email, username, **owner_extra):
     UserModel = get_user_model()
     TenantModel = get_tenant_model()
@@ -109,14 +110,11 @@ def create_public_tenant(domain_url, owner_email, username, **owner_extra):
     )
 
     # Add one or more domains for the tenant
-    domain = get_tenant_domain_model().objects.create(
+    get_tenant_domain_model().objects.create(
         domain=domain_url,
         tenant=public_tenant,
         is_primary=True
     )
-
-    # Add system user to public tenant (no permissions)
-    public_tenant.add_user(profile)
 
 
 def fix_tenant_urls(domain_url):
