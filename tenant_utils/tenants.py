@@ -63,7 +63,7 @@ class TenantBase(TenantMixin):
         )
         # Link user to tenant
         try:
-            user_obj.tenant_set.add(self)
+            user_obj.tenants.add(self)
         except AttributeError:
             self.__class__.users.through._default_manager.create(
                 **dict(zip(
@@ -96,7 +96,7 @@ class TenantBase(TenantMixin):
         # Unlink from tenant
         get_permissions_model().objects.filter(id=user_tenant_perms.id).delete()
         try:
-            user_obj.tenant_set.remove(self)
+            user_obj.tenants.remove(self)
         except AttributeError:
             self.__class__.users.through._default_manager.filter(
                 **dict(zip(
@@ -185,7 +185,7 @@ class TenantUserMixin(models.Model):
         verbose_name=_('users'),
         blank=True,
         help_text=_('The users that belongs to this tenant.'),
-        related_name="tenant_set"
+        related_name="tenants"
     )
 
     class Meta:
