@@ -51,7 +51,7 @@ def _get_tenant_user_session_key(request):
 def get_tenant_user(request):
     """
     Return the organization user model instance associated with the given request session.
-    If not user is retrieved, return an instance of modified `AnonymousUser`.
+    If no user is retrieved, return an instance of modified `AnonymousUser`.
     """
     from django.contrib.auth.models import AnonymousUser
 
