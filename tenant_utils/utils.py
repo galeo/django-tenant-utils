@@ -7,7 +7,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ImproperlyConfigured
 
 from django_tenants.utils import (
-    schema_context,
     get_tenant_model,
     get_tenant_domain_model,
     get_public_schema_name
@@ -51,28 +50,6 @@ def schema_required(func):
             connection.set_schema(saved_schema)
         return result
     return inner
-
-
-@transaction.atomic
-def add_user(user=None, tenant=None, **kwargs):
-    user.tenants.add(tenant)
-    with schema_context(tenant.schema_name):
-        try:
-            PermissionsModel = get_permissions_model()
-            permissions = PermissionsModel.objects.get(user_id=user.id)
-        except PermissionsModel.DoesNotExist:
-            permissions = PermissionsModel(user=user, **kwargs)
-            permissions.save()
-
-
-@transaction.atomic
-def remove_user(user=None, tenant=None):
-    user.tenants.remove(tenant)
-    with schema_context(tenant.schema_name):
-        PermissionsModel = get_permissions_model()
-        permissions = PermissionsModel.objects.filter(user_id=user.id).first()
-        if permissions:
-            permissions.delete()
 
 
 def get_current_tenant():
