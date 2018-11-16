@@ -203,13 +203,13 @@ class TenantBase(TenantMixin):
         # Transfer ownership to system
         self.transfer_ownership(public_tenant.owner)
 
-    @schema_required
+    @transaction.atomic
     def transfer_ownership(self, new_owner):
         old_owner = self.owner
         self.owner = new_owner
+        self.save(update_fields=['owner'])
         self.remove_user(old_owner, soft_remove=False)
         self.add_user(new_owner, is_superuser=True)
-        self.save()
 
     class Meta:
         abstract = True
