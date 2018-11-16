@@ -10,7 +10,7 @@ CAUTION: This is pre-alpha software, you may not want to use it in production en
 
 ## Prerequisites
 
-django-tenant-utils is compatible with Django 1.11 and above. Python 3.5+ is supported.
+django-tenant-utils is compatible with Django 2.0 and above. Python 3.5+ is supported.
 It is assumed that this app will be used alongside
 [django-tenants](https://github.com/tomturner/django-tenants).
 
