@@ -56,18 +56,13 @@ class UserProfileManager(BaseUserManager):
         profile.set_password(password)
         profile.save()
 
-        # Get public tenant tenant and link the user (no perms)
-        public_tenant = get_tenant_model().objects.get(
-            schema_name=get_public_schema_name())
-        public_tenant.add_user(profile)
-
         # Public tenant permissions object was created when we assigned a
         # role to the user above, if we are a staff/superuser we set it here
         if is_staff or is_superuser:
-            user_tenant = profile.tenant_permissions
-            user_tenant.is_staff = is_staff
-            user_tenant.is_superuser = is_superuser
-            user_tenant.save()
+            user_tenant_perms = profile.permissions
+            user_tenant_perms.is_staff = is_staff
+            user_tenant_perms.is_superuser = is_superuser
+            user_tenant_perms.save()
 
         tenant_user_created.send(sender=self.__class__, user=profile)
 
@@ -89,8 +84,7 @@ class UserProfileManager(BaseUserManager):
         if user_obj.id == public_tenant.owner.id:
             raise DeleteError("Cannot delete the public tenant owner!")
 
-        # This includes the linked public tenant 'tenant'. It will delete the
-        # Tenant permissions and unlink when user is deleted
+        # Delete the tenant permissions and unlink when user is deleted
         for tenant in user_obj.tenants.all():
             # If user owns the tenant, we call delete on the tenant
             # which will delete the user from the tenant as well
@@ -99,7 +93,7 @@ class UserProfileManager(BaseUserManager):
                 tenant.delete_tenant()
             else:
                 # Unlink user from all roles in any tenant it doesn't own
-                tenant.remove_user(user_obj)
+                tenant.remove_user(user_obj, soft_remove=False)
 
         # Set is_active, don't actually delete the object
         user_obj.is_active = False

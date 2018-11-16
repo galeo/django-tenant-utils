@@ -57,8 +57,8 @@ def provision_tenant(tenant_name, tenant_slug, user_email, is_staff=False):
                                                               tenant=tenant,
                                                               is_primary=True)
             # Add user as a superuser inside the tenant
-            # tenant.add_user(user, is_superuser=True, is_staff=is_staff)
-    except:
+            tenant.add_user(user, is_superuser=True, is_staff=is_staff)
+    except:  # noqa
         if domain is not None:
             domain.delete()
         if tenant is not None:
