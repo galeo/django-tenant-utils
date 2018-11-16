@@ -89,7 +89,7 @@ class TenantPermissionsDelegator(object):
     def is_staff(self, value):
         try:
             self.permissions.is_staff = value
-            self.permissions.is_staff.save()
+            self.permissions.save()
         except self.PermissionsModel.DoesNotExist:
             if self.id:
                 permissions = self.PermissionsModel(
