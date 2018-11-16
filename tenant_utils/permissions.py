@@ -73,22 +73,23 @@ class TenantPermissionsDelegator(object):
         return self._PermissionsModel
 
     @property
-    def tenant_permissions(self):
+    def permissions(self):
         """The tenant-specific permissions object for this user."""
-        return self.PermissionsModel.objects.get(user_id=self.id)
+        tenant_perms_profile, _ = self.PermissionsModel.objects.get_or_create(user_id=self.id)
+        return tenant_perms_profile
 
     @property
     def is_staff(self):
         try:
-            return self.tenant_permissions.is_staff
+            return self.permissions.is_staff
         except self.PermissionsModel.DoesNotExist:
             return False
 
     @is_staff.setter
     def is_staff(self, value):
         try:
-            self.tenant_permissions.is_staff = value
-            self.tenant_permissions.is_staff.save()
+            self.permissions.is_staff = value
+            self.permissions.is_staff.save()
         except self.PermissionsModel.DoesNotExist:
             if self.id:
                 permissions = self.PermissionsModel(
@@ -104,15 +105,15 @@ class TenantPermissionsDelegator(object):
         assigning them.
         """
         try:
-            return self.tenant_permissions.is_superuser
+            return self.permissions.is_superuser
         except self.PermissionsModel.DoesNotExist:
             return False
 
     @is_superuser.setter
     def is_superuser(self, value):
         try:
-            self.tenant_permissions.is_superuser = value
-            self.tenant_permissions.save()
+            self.permissions.is_superuser = value
+            self.permissions.save()
         except self.PermissionsModel.DoesNotExist:
             if self.id:
                 permissions = self.PermissionsModel(
@@ -128,15 +129,15 @@ class TenantPermissionsDelegator(object):
         granted to each of their groups.
         """
         try:
-            return self.tenant_permissions.groups
+            return self.permissions.groups
         except self.PermissionsModel.DoesNotExist:
             return Group.objects.none()
 
     @groups.setter
     def groups(self, value):
         try:
-            self.tenant_permissions.groups = value
-            self.tenant_permissions.save()
+            self.permissions.groups = value
+            self.permissions.save()
         except self.PermissionsModel.DoesNotExist:
             if self.id:
                 permissions = self.PermissionsModel(
@@ -149,15 +150,15 @@ class TenantPermissionsDelegator(object):
     def user_permissions(self):
         """Specific permissions for this user."""
         try:
-            return self.tenant_permissions.user_permissions
+            return self.permissions.user_permissions
         except self.PermissionsModel.DoesNotExist:
             return Permission.objects.none()
 
     @user_permissions.setter
     def user_permissions(self, value):
         try:
-            self.tenant_permissions.user_permissions = value
-            self.tenant_permissions.save()
+            self.permissions.user_permissions = value
+            self.permissions.save()
         except self.PermissionsModel.DoesNotExist:
             if self.id:
                 permissions = self.PermissionsModel(
@@ -173,13 +174,13 @@ class TenantPermissionsDelegator(object):
         return only permissions matching this object.
         """
         try:
-            return self.tenant_permissions.get_group_permissions(obj=obj)
+            return self.permissions.get_group_permissions(obj=obj)
         except self.PermissionsModel.DoesNotExist:
             return set()
 
     def get_all_permissions(self, obj=None):
         try:
-            return self.tenant_permissions.get_all_permissions(obj=obj)
+            return self.permissions.get_all_permissions(obj=obj)
         except self.PermissionsModel.DoesNotExist:
             return set()
 
@@ -192,7 +193,7 @@ class TenantPermissionsDelegator(object):
         permissions for that object.
         """
         try:
-            return self.tenant_permissions.has_perm(perm, obj=obj)
+            return self.permissions.has_perm(perm, obj=obj)
         except self.PermissionsModel.DoesNotExist:
             return False
 
@@ -202,7 +203,7 @@ class TenantPermissionsDelegator(object):
         object is passed, check if the user has all required perms for it.
         """
         try:
-            return self.tenant_permissions.has_perms(perm_list, obj=obj)
+            return self.permissions.has_perms(perm_list, obj=obj)
         except self.PermissionsModel.DoesNotExist:
             return False
 
@@ -212,6 +213,6 @@ class TenantPermissionsDelegator(object):
         Use simlar logic as has_perm(), above.
         """
         try:
-            return self.tenant_permissions.has_module_perms(app_label)
+            return self.permissions.has_module_perms(app_label)
         except self.PermissionsModel.DoesNotExist:
             return False
