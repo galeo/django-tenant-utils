@@ -66,7 +66,7 @@ def provision_tenant(tenant_name, tenant_slug, user_email, is_staff=False):
             tenant.delete(True)
         raise
 
-    return tenant_domain
+    return tenant
 
 
 def create_tenant_user(tenant_slug,
