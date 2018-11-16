@@ -19,7 +19,7 @@ It is assumed that this app will be used alongside
 django-tenant-utils is not yet available on PyPI. You could install it directly from GitHub.
 
 ``` shell
-$ pip install git+git://github.com/galeo/django-tenant-utils
+$ pip install git+https://github.com/galeo/django-tenant-utils
 ```
 
 ## License
