@@ -47,10 +47,13 @@ def provision_tenant(tenant_name, tenant_slug, user_email, is_staff=False):
         # Wrap it in public schema context so schema consistency is maintained
         # if any error occurs
         with schema_context(get_public_schema_name()):
+            default_user_model = settings.AUTH_USER_MODEL
+            settings.AUTH_USER_MODEL = settings.TENANT_USER_MODEL
             tenant = TenantModel.objects.create(name=tenant_name,
                                                 slug=tenant_slug,
                                                 schema_name=schema_name,
                                                 owner=user)
+            settings.AUTH_USER_MODEL = default_user_model
 
             # Add one or more domains for the tenant
             domain = get_tenant_domain_model().objects.create(domain=tenant_domain,
