@@ -94,14 +94,12 @@ class TenantBase(TenantMixin):
         )
 
         # Link user to tenant
-        try:
-            user_obj.tenants.add(self)
-        except AttributeError:
-            fields = self.__class__.users.field.remote_field.through_fields + \
-                ('organization_user',)
-            self.__class__.users.through._default_manager.create(
-                **dict(zip(fields, (self, user_obj, tenant_user.pk)))
-            )
+        fields = self.__class__.users.field.remote_field.through_fields + (
+            'organization_user',
+        )
+        self.__class__.users.through._default_manager.create(
+            **dict(zip(fields, (self, user_obj, tenant_user.pk)))
+        )
 
         tenant_user_added.send(sender=self.__class__, user=user_obj, tenant=self)
 
@@ -116,7 +114,7 @@ class TenantBase(TenantMixin):
         """
         if self.schema_name == get_public_schema_name():
             raise SchemaError(
-                "It's not allowed to add a public user to the public tenant."
+                "It's not allowed to remove a public user from the public tenant."
                 "Make sure the current tenant {} is not the public tenant.".format(self)
             )
 
@@ -159,13 +157,10 @@ class TenantBase(TenantMixin):
             tenant_user.save()
 
         # Unlink from tenant
-        try:
-            user_obj.tenants.remove(self)
-        except AttributeError:
-            fields = self.__class__.users.field.remote_field.through_fields
-            self.__class__.users.through._default_manager.filter(
-                **dict(zip(fields, (self, user_obj)))
-            ).delete()
+        fields = self.__class__.users.field.remote_field.through_fields
+        self.__class__.users.through._default_manager.filter(
+            **dict(zip(fields, (self, user_obj)))
+        ).delete()
 
         if deleted:
             tenant_user_removed.send(sender=self.__class__, user=user_obj, tenant=self)
