@@ -1,33 +1,11 @@
-from django.contrib.auth.backends import ModelBackend as DjangoModelBackend
-from django.contrib.auth.models import Permission
+from django.contrib.auth.backends import ModelBackend
 
 from django_tenants.utils import get_public_schema_name
 
 from . import get_tenant_user_model
-from .utils import get_permissions_model
 
 
 TenantUserModel = get_tenant_user_model()
-
-
-class ModelBackend(DjangoModelBackend):
-    """
-    Authenticates against settings.AUTH_USER_MODEL.
-
-    This class overrides `_get_group_permissions` to find permissions based on
-    the user's per-tenant `settings.TENANT_USERS_PERMISSIONS_MODEL` instance's
-    group memberships instead of the user's direct group memberships.
-    """
-    def _get_group_permissions(self, user_obj):
-        """
-        Returns a set of permission strings the user `user_obj` has from the
-        groups they belong to through their
-        `settings.TENANT_USERS_PERMISSIONS_MODEL` instance.
-        """
-        PermissionsModel = get_permissions_model()
-        groups_field = PermissionsModel._meta.get_field('groups')
-        groups_query = 'group__%s' % groups_field.related_query_name()
-        return Permission.objects.filter(**{groups_query: user_obj})
 
 
 class TenantModelBackend(ModelBackend):

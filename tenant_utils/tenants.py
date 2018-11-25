@@ -15,7 +15,7 @@ from .signals import (
     tenant_user_connected,
     tenant_user_disconnected
 )
-from .utils import schema_required, get_permissions_model
+from .utils import schema_required
 from .exceptions import InactiveError, ExistsError, DeleteError, SchemaError
 
 
@@ -158,7 +158,7 @@ class TenantBase(TenantMixin):
 
     @schema_required
     @transaction.atomic
-    def add_user(self, user_obj, is_superuser=False, is_staff=False, **extra_perms):
+    def add_user(self, user_obj, is_superuser=False, is_staff=False):
         """
         Create a user inside the tenant and set its supervisor to the public user.
         """
@@ -177,14 +177,8 @@ class TenantBase(TenantMixin):
             email='{}_{}'.format(user_obj.email, time_string),
             username='{}_{}'.format(user_obj.username, time_string),
             supervisor=user_obj,
+            is_superuser=is_superuser, is_staff=is_staff,
             is_verified=True)
-
-        # Create permissions for this tenant user
-        get_permissions_model().objects.create(
-            user_id=tenant_user.pk,
-            is_staff=is_staff,
-            is_superuser=is_superuser,
-            **extra_perms)
 
         # Link user to tenant
         self._link_to_tenant_user(user_obj, tenant_user)
@@ -226,19 +220,10 @@ class TenantBase(TenantMixin):
             # Set supervisor of the tenant user to NULL
             tenant_user.supervisor = None
             if not soft_remove:
-                user_tenant_perms = tenant_user.permissions
-
-                # Remove all current groups from user..
-                groups = user_tenant_perms.groups
-                groups.clear()
-
-                # Remove permission profile
-                tenant_user_perms = get_permissions_model().objects.filter(
-                    id=user_tenant_perms.id
-                ).first()
-                if tenant_user_perms:
-                    tenant_user_perms.delete()
-
+                # Remove all current groups from user
+                tenant_user.user_permissions.clear()
+                # Remove permissions
+                tenant_user.groups.clear()
                 # Set the status of this tenant user to inactive
                 tenant_user.is_active = False
             tenant_user.save()
