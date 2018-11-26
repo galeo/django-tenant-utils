@@ -70,10 +70,8 @@ def provision_tenant(tenant_name, tenant_slug, user_email, is_staff=False):
 
 
 def create_tenant_user(tenant_slug,
-                       email, password,
-                       is_verified=False,
-                       is_staff=False, is_superuser=False,
-                       related_user_email=None,
+                       username, email, password,
+                       connected_user_email=None,
                        **user_extra):
     """
     Create user for a specified tenant.
@@ -88,28 +86,29 @@ def create_tenant_user(tenant_slug,
         raise ExistsError("Tenant not exists.")
 
     public_profile = None
-    if related_user_email:
+    if connected_user_email:
         with schema_context(public_schema_name):
             public_profile = PublicUserModel.objects.filter(
-                email=related_user_email).first()
+                email=connected_user_email).first()
             if not public_profile:
                 raise ExistsError("Related public user not exists.")
 
     profile = None
     with schema_context(tenant.schema_name):
-        profile = TenantUserModel.objects.filter(email=email).first()
+        profile = TenantUserModel.objects.filter(username=username).first()
         if profile and profile.is_active:
             raise ExistsError("User already exists!")
 
         if not profile:
             profile = TenantUserModel.objects.create(
-                email=email, **user_extra
+                username=username, email=email, **user_extra
             )
+        profile.email = email
         profile.is_active = True
-        profile.is_staff = is_staff
-        profile.is_superuser = is_superuser
-        profile.is_verified = is_verified
         profile.set_password(password)
+        for attr, value in user_extra.items():
+            setattr(profile, attr, value)
+
         if public_profile:
             profile.supervisor = public_profile
         profile.save()
