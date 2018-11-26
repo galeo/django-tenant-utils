@@ -10,7 +10,12 @@ from .exceptions import SchemaError, ExistsError, DeleteError, InactiveError
 
 
 class UserManager(BaseUserManager):
-    def _create_user(self, email, password, is_staff, is_superuser, is_verified, **extra_fields):
+    use_in_migrations = True
+
+    def _create_user(self, username, email, password, **extra_fields):
+        """
+        Create and save a user with the given username, email, and password.
+        """
         # Do some schema validation to protect against calling create user from inside
         # a tenant. Must create public tenant permissions during user creation. This
         # happens during assign role. This function cannot be used until a public
@@ -19,6 +24,10 @@ class UserManager(BaseUserManager):
 
         if connection.get_schema() != get_public_schema_name():
             raise SchemaError("Schema must be public for UserManager user creation.")
+
+        if not username:
+            raise ValueError("The given username must be set.")
+        username = self.model.normalize_username(username)
 
         if not email:
             raise ValueError("Users must have an email address.")
@@ -29,7 +38,7 @@ class UserManager(BaseUserManager):
         if not password:
             password = self.make_random_password(length=30)
 
-        user = UserModel.objects.filter(email=email).first()
+        user = UserModel.objects.filter(username=username).first()
         if user and user.is_active:
             raise ExistsError("User already exists!")
 
@@ -41,30 +50,33 @@ class UserManager(BaseUserManager):
         # previously had access to (this is good thing IMO). 2) The public
         # schema if they had previous activity associated would be available
         if not user:
-            user = UserModel(email=email, is_verified=is_verified, **extra_fields)
+            user = UserModel(username=username, email=email, **extra_fields)
 
         user.email = email
         user.is_active = True
-        user.is_verified = is_verified
         user.set_password(password)
+        for attr, value in extra_fields.items():
+            setattr(user, attr, value)
         user.save()
 
-        # Public tenant permissions object was created when we assigned a
-        # role to the user above, if we are a staff/superuser we set it here
-        if is_staff or is_superuser:
-            user.is_staff = is_staff
-            user.is_superuser = is_superuser
-            user.save()
-
         tenant_user_created.send(sender=self.__class__, user=user)
-
         return user
 
-    def create_user(self, email=None, password=None, is_staff=False, **extra_fields):
-        return self._create_user(email, password, is_staff, False, False, **extra_fields)
+    def create_user(self, username, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(username, email, password, **extra_fields)
 
-    def create_superuser(self, password, email=None, **extra_fields):
-        return self._create_user(email, password, True, True, True, **extra_fields)
+    def create_superuser(self, username, email, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self._create_user(username, email, password, **extra_fields)
 
     def delete_user(self, user_obj):
         if not user_obj.is_active:
@@ -76,7 +88,8 @@ class UserManager(BaseUserManager):
         if user_obj.id == public_tenant.owner.id:
             raise DeleteError("Cannot delete the public tenant owner!")
 
-        # Delete the tenant permissions and unlink when user is deleted
+        # Delete permissions in which tenant the user is linked and
+        # unlink when user is deleted
         for tenant in user_obj.tenants.all():
             # If user owns the tenant, we call delete on the tenant
             # which will delete the user from the tenant as well

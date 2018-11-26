@@ -44,7 +44,7 @@ def get_current_tenant():
 
 
 @transaction.atomic
-def create_public_tenant(domain_url, owner_email, username, **owner_extra):
+def create_public_tenant(domain_url, owner_username, owner_email, **owner_extra):
     UserModel = get_user_model()
     TenantModel = get_tenant_model()
     public_schema_name = get_public_schema_name()
@@ -55,8 +55,8 @@ def create_public_tenant(domain_url, owner_email, username, **owner_extra):
     # Create public tenant user. This user doesn't go through object manager
     # create_user function because public tenant does not exist yet
     profile = UserModel.objects.create(
+        username=owner_username,
         email=owner_email,
-        username=username,
         is_active=True,
         **owner_extra
     )
