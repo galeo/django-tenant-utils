@@ -20,22 +20,6 @@ def get_tenant_schema_session_key():
                    '_tenant_schema_name')
 
 
-def get_permissions_model():
-    try:
-        model_name = settings.TENANT_USERS_PERMISSIONS_MODEL
-        return apps.get_model(model_name, require_ready=False)
-    except AttributeError:
-        raise ImproperlyConfigured(
-            _('TENANT_USERS_PERMISSIONS_MODEL '
-              'must be defined in settings.')
-        )
-    except LookupError:
-        raise ImproperlyConfigured(
-            _('Failed to import the model specified in '
-              'settings.TENANT_USERS_PERMISSIONS_MODEL.')
-        )
-
-
 def schema_required(func):
     def inner(self, *args, **options):
         tenant_schema = self.schema_name
