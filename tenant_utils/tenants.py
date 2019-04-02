@@ -45,9 +45,9 @@ class TenantBase(TenantMixin):
 
         super(TenantBase, self).save(*args, **kwargs)
 
-    def delete(self, force_drop=False):
+    def delete(self, force_drop=False, *args, **kwargs):
         if force_drop:
-            super(TenantBase, self).delete(force_drop=True)
+            super().delete(force_drop, *args, **kwargs)
         else:
             raise DeleteError("Not supported -- delete_tenant() should be used.")
 
