@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib import auth
-from django.utils.deprecation import MiddlewareMixin
+from django.contrib.auth.middleware import AuthenticationMiddleware
 from django.utils.functional import SimpleLazyObject
 
 from django_tenants.utils import get_public_schema_name
@@ -17,7 +17,7 @@ def get_user(request):
     return request._cached_user
 
 
-class TenantAuthenticationMiddleware(MiddlewareMixin):
+class TenantAuthenticationMiddleware(AuthenticationMiddleware):
     def process_request(self, request):
         assert hasattr(request, 'session'), (
             "The tenant authentication middleware requires session middleware "
