@@ -136,10 +136,6 @@ class TenantBase(TenantMixin):
                supervisor=user_obj.id).exists():
             disconnected = True
 
-        if not user_obj.is_active:
-            raise InactiveError(
-                "User specified is not an active user: %s" % user_obj)
-
         # Don't allow disconnecting an owner from a tenant
         if user_obj.id == self.owner.id:
             raise DeleteError(
@@ -205,9 +201,6 @@ class TenantBase(TenantMixin):
         if self.users.filter(id=user_obj.id).exists() or \
            get_tenant_user_model().objects.filter(supervisor=user_obj.id).exists():
             deleted = True
-
-        if not user_obj.is_active:
-            raise InactiveError("User specified is not an active user: %s" % user_obj)
 
         # Don't allow removing an owner from a tenant
         # This must be done through delete tenant or transfer_ownership
